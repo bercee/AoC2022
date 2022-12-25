@@ -1,0 +1,9 @@
+.gradle
+**/build/
+!src/**/build/
+/build.gradle
+/session_id.txt
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+**/input.txt
+gradle-app.setting
