@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -121,6 +122,32 @@ public class Day17 extends DaySolver {
         }
     }
 
+    class Status {
+        final String topRows;
+        final int jetI;
+        final int shapeI;
+
+        public Status(String topRows, int jetI, int shapeI) {
+            this.topRows = topRows;
+            this.jetI = jetI;
+            this.shapeI = shapeI;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Status status = (Status) o;
+            return jetI == status.jetI && shapeI == status.shapeI && topRows.equals(status.topRows);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(topRows, jetI, shapeI);
+        }
+    }
+
+
     public Day17() {
         super(17);
     }
@@ -189,51 +216,48 @@ public class Day17 extends DaySolver {
     @Override
     protected Object algorithmPart2() {
 
-        long MAX_CYCLES_LARGE = 10000000l;
-        long c = 0;
-        long time = System.currentTimeMillis();
-        while (c < MAX_CYCLES_LARGE) {
-//            Direction d = JET_PROVIDER.getNext();
-            Shape s = SHAPE_PROVIDER.getNext();
-            c++;
-        }
-        LOG.debug("elapsed: {}s",((double)System.currentTimeMillis() - time)/1000);
+        long MAX_CYCLES_LARGE = 1000000000000l;
+        int topRows = 20;
+        HashMap<Status, Long> statuses = new HashMap();
+        HashMap<Long, Integer> maxHeights = new HashMap<>();
 
-//        long cycle = 0;
-//        while (cycle < 1000000000000l) {
-//            cycle++;
-//            if (SHAPE_PROVIDER.getNextID() == 0 && JET_PROVIDER.getNextID() == 0) {
-//                LOG.debug("Jet and shape start over at cycle {}",cycle);
-//            }
+        long c = 0;
+        Status status = new Status(getTopRows(topRows), JET_PROVIDER.i, SHAPE_PROVIDER.i);
+
+        do {
+            statuses.put(status, c);
+            maxHeights.put(c, maxH);
+            c++;
+            dropNewShape();
+            status = new Status(getTopRows(topRows), JET_PROVIDER.i, SHAPE_PROVIDER.i);
+
+        } while (!statuses.containsKey(status));
+
+
+//        while (!statuses.containsKey(status = new Status(getTopRows(topRows), JET_PROVIDER.i, SHAPE_PROVIDER.i))) {
+//            statuses.put(status, c);
+//            maxHeights.put(c, maxH);
 //            dropNewShape();
-//            if ((cycle-1)%100000 == 0 && cycle > 1) {
-////                LOG.debug("cycle: {}, max: {}, max/cycle: {}",cycle, maxH, (double)maxH / cycle);
-//                System.out.println((double) maxH / cycle);
-//            }
+//            c++;
 //        }
 
-//        MAX_CYCLES = input.length() * SHAPES_SRC.length;
-//        HashMap<Integer, Integer> maxs = null;
-//        Set<HashMap<Integer, Integer>> maxProfiles = new HashSet<>();
-//        int c = 0;
-//        do {
-//            if (maxs != null) {
-//                maxProfiles.add(createRelMaxs(maxs));
-//            }
-//            maxs = new HashMap<>();
-//            c++;
-//            LOG.debug("trying cycle: {}", c);
-//            algorithmPart1();
-//            for (int i = 1; i <= 7; i++) {
-//                int finalI = i;
-//                List<Point2DInt> list = objects.stream().filter(p -> p.getI() == finalI).collect(Collectors.toList());
-//                list.sort(Comparator.comparingInt(Point2DInt::getJ).reversed());
-//                maxs.put(i, list.get(0).getJ());
-////                LOG.debug("max in column {}: {}", i, list.get(0).getJ());
-//            }
-//        }while(!maxProfiles.contains(maxs));
-//        LOG.debug("this many cycles: {}",c);
-        return null;
+        long firstStateCycle = statuses.get(status);
+        LOG.debug("first state cycle: {}", firstStateCycle);
+        int firstStateHeight = maxHeights.get(firstStateCycle);
+        LOG.debug("first state height: {}", firstStateHeight);
+        long diffCycle = c - firstStateCycle;
+        LOG.debug("diff cycle: {}", diffCycle);
+        int diffHeight = maxH - firstStateHeight;
+        LOG.debug("diff height: {}", diffHeight);
+
+        long rotations = (MAX_CYCLES_LARGE - firstStateCycle) / diffCycle;
+        LOG.debug("rotations: {}", rotations);
+        long remainingCycle = MAX_CYCLES_LARGE - firstStateCycle - diffCycle * rotations;
+        LOG.debug("remaining cycle: {}", remainingCycle);
+        int remainingHeight = maxHeights.get(firstStateCycle + remainingCycle);
+        LOG.debug("remaining height: {}", remainingHeight);
+
+        return rotations*diffHeight + remainingHeight;
     }
 
     private boolean maxsDiffer(HashMap<Integer, Integer> maxs) {
@@ -254,6 +278,17 @@ public class Day17 extends DaySolver {
         return first.entrySet().stream()
                 .allMatch(e -> e.getValue().equals(second.get(e.getKey())));
     }
+
+    private String getTopRows(int rows) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 7; i++) {
+            for (int j = maxH; j > maxH - rows; j--) {
+                sb.append(objects.contains(new Point2DInt(i, j)) ? "#" : ".");
+            }
+        }
+        return sb.toString();
+    }
+
 
 
 
